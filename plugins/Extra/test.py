@@ -1,58 +1,59 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from playwright.async_api import async_playwright
+import aiohttp
+import os
 import re
+from urllib.parse import urlparse, unquote
 
-# Custom function to sniff video link
-async def sniff_vahaflix_video(url: str) -> str:
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
-        )
 
-        # OPTIONAL: Add cookies here if needed
-        # await context.add_cookies([
-        #     {"name": "_ga", "value": "xxx", "domain": "h5.vahaflix.com", "path": "/"},
-        # ])
+# Download function with dynamic filename
+async def download_file(url: str, filename: str) -> str:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            if resp.status != 200:
+                return None
+            with open(filename, 'wb') as f:
+                while True:
+                    chunk = await resp.content.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+    return filename
 
-        page = await context.new_page()
-        video_url = None
 
-        async def handle_response(response):
-            nonlocal video_url
-            if (
-                ("vod-qcloud.com" in response.url) and
-                (".mp4" in response.url or ".m3u8" in response.url)
-            ):
-                video_url = response.url
+# Extract filename from URL
+def extract_filename_from_url(url: str) -> str:
+    path = urlparse(url).path
+    filename = os.path.basename(path)
+    return unquote(filename)
 
-        page.on("response", handle_response)
 
-        try:
-            await page.goto(url, timeout=30000)
-            await page.wait_for_timeout(8000)  # Let the video load
-        except Exception as e:
-            print(f"Error loading page: {e}")
-
-        await browser.close()
-        return video_url
-
-# Pyrogram handler
+# Pyrogram command handler
 @Client.on_message(filters.command("dl") & filters.private)
-async def vahaflix_handler(client: Client, message: Message):
+async def vahaflix_direct_download(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply("🔗 Please provide a Vahaflix link.\nUsage: `/dl <link>`", quote=True)
+        return await message.reply("🔗 Please send a direct video link.\nUsage: `/dl <direct .mp4/.m3u8 link>`", quote=True)
 
     link = message.command[1]
-    if not re.match(r"https?://", link):
-        return await message.reply("⚠️ Invalid URL. Please provide a proper link.", quote=True)
 
-    msg = await message.reply("⏳ Scraping video link from Vahaflix...", quote=True)
-    video_url = await sniff_vahaflix_video(link)
+    # Validate CDN video link
+    if not re.search(r'\.(mp4|m3u8)(\?|$)', link):
+        return await message.reply("⚠️ Only direct `.mp4` or `.m3u8` links are allowed.", quote=True)
 
-    if video_url:
-        await msg.edit(f"✅ Video URL Found:\n`{video_url}`")
-    else:
-        await msg.edit("❌ Unable to find MP4/M3U8 video URL.\nIt may be DRM protected or expired.")
+    filename = extract_filename_from_url(link)
+    msg = await message.reply(f"⬇️ Downloading `{filename}`...", quote=True)
 
+    try:
+        filepath = await download_file(link, filename)
+        if filepath and os.path.exists(filepath):
+            await client.send_video(
+                chat_id=message.chat.id,
+                video=filepath,
+                caption=f"📥 Downloaded: `{filename}`",
+                reply_to_message_id=message.id
+            )
+            os.remove(filepath)
+        else:
+            await msg.edit("❌ Download failed.")
+    except Exception as e:
+        await msg.edit(f"❌ Error: `{str(e)}`")
