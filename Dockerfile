@@ -9,14 +9,12 @@ RUN apt update && apt install -y \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy your code
+
 COPY . .
 
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install spotipy yt-dlp spotdl telethon
-RUN pip install git+https://github.com/AliAkhtari78/SpotifyScraper.git
+RUN pip install spotipy  telethon
 
-# Note: Removed Playwright install commands here
+
 
 CMD ["python", "bot.py"]
