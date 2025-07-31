@@ -1,16 +1,22 @@
-from telethon import TelegramClient, events
+import asyncio
+from pyrogram import Client as PyroClient
+from telethon import TelegramClient as TeleClient, events
+from telethon.sessions import StringSession
 from telethon.tl.types import InputPhoto
 from io import BytesIO
-import asyncio
-from info import API_ID, API_HASH, USER_SESSION
-from telethon.sessions import StringSession
+from info import API_ID, API_HASH, USER_SESSION, PYRO_API_ID, PYRO_API_HASH, PYRO_BOT_TOKEN
 
-client = TelegramClient(StringSession(USER_SESSION), API_ID, API_HASH)
+# Pyrogram client
+pyro = PyroClient("pyro_bot", api_id=PYRO_API_ID, api_hash=PYRO_API_HASH, bot_token=PYRO_BOT_TOKEN)
+
+# Telethon client
+tele = TeleClient(StringSession(USER_SESSION), API_ID, API_HASH)
 
 thumb_store = {}
 
-@client.on(events.NewMessage(incoming=True))
-async def handler(event):
+# Telethon event handler
+@tele.on(events.NewMessage(incoming=True))
+async def tele_handler(event):
     user_id = event.sender_id
 
     if event.photo:
@@ -24,13 +30,8 @@ async def handler(event):
 
         thumb = thumb_store[user_id]
 
-        # Download video into memory
-        video_bytes = await client.download_media(event.video, file=BytesIO())
-
-        # Append zero byte to tweak file (modify file so Telegram treats as new)
+        video_bytes = await tele.download_media(event.video, file=BytesIO())
         video_bytes.write(b'\0')
-
-        # Seek to start for upload
         video_bytes.seek(0)
 
         input_photo = InputPhoto(
@@ -40,7 +41,7 @@ async def handler(event):
         )
 
         try:
-            await client.send_file(
+            await tele.send_file(
                 event.chat_id,
                 file=video_bytes,
                 thumb=input_photo,
@@ -52,8 +53,20 @@ async def handler(event):
             await event.reply(f"❌ Error: {str(e)}")
 
 async def main():
-    await client.start()
-    print("Client started")
-    await client.run_until_disconnected()
+    # Start both clients
+    await pyro.start()
+    await tele.start()
 
-asyncio.run(main())
+    print("Both Pyrogram and Telethon clients started")
+
+    # Run both clients concurrently
+    await asyncio.gather(
+        pyro_idle(),
+        tele.run_until_disconnected()
+    )
+
+async def pyro_idle():
+    await pyro.idle()
+
+if __name__ == "__main__":
+    asyncio.run(main())
