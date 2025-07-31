@@ -93,7 +93,7 @@ async def download_thumb(url: str, path: str = "thumb.jpg") -> str:
 
 # Reply to video with /send to resend with thumbnail
 @userbot.on_message(filters.command("send") & filters.me)
-async def resend_with_thumb(client: Client, message: Message):
+async def resend_with_thumb(client, message):
     if not message.reply_to_message or not message.reply_to_message.video:
         await message.reply("❌ Reply to a video message with /send.")
         return
