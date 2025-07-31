@@ -15,14 +15,9 @@ async def save_thumb(client, message: Message):
 @app.on_message(filters.video & filters.private)
 async def send_custom_video(client, message: Message):
     uid = message.from_user.id
-    thumb_id = thumb_store.get(uid)
-
-    if not thumb_id:
-        return await message.reply("❗Please send a thumbnail image first.")
-
     await client.send_video(
         chat_id=message.chat.id,
         video=message.video.file_id,
-        thumb=thumb_id,
+        thumb="https://telegra.ph/file/604a3f83a6ebeaa9effeb.jpg",
         caption="🎥 Here is your video with custom thumbnail!"
     )
