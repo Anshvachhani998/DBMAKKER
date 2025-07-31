@@ -7,6 +7,7 @@ from asyncio import Queue
 import random
 import uuid
 import re
+import aiohttp
 
 import pytz
 from datetime import date, datetime
