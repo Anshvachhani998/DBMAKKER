@@ -1,5 +1,5 @@
 from telethon import TelegramClient, events, types
-from config import API_ID, API_HASH, USER_SESSION
+from info import API_ID, API_HASH, USER_SESSION
 
 client = TelegramClient("session", API_ID, API_HASH).start(session=USER_SESSION)
 
