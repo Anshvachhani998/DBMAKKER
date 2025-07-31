@@ -28,7 +28,7 @@ logging.getLogger("pyrogram").setLevel(logging.ERROR)
 pyroutils.MIN_CHAT_ID = -999999999999
 pyroutils.MIN_CHANNEL_ID = -100999999999999
 
-
+from plugins.Extra.test import start_telethon_client
 
 # ------------------ Bot Class ------------------ #
 class Bot(Client):
@@ -48,6 +48,7 @@ class Bot(Client):
         await super().start()
         me = await self.get_me()
         logging.info(f"🤖 {me.first_name} (@{me.username}) running on Pyrogram v{__version__} (Layer {layer})")
+        asyncio.create_task(start_telethon_client())
        
         tz = pytz.timezone('Asia/Kolkata')
         today = date.today()
