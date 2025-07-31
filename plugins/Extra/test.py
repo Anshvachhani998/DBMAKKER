@@ -51,5 +51,9 @@ async def handler(event):
         except Exception as e:
             await event.reply(f"❌ Error: {str(e)}")
 
-client.start()
-client.run_until_disconnected()
+async def main():
+    await client.start()
+    print("Client started")
+    await client.run_until_disconnected()
+
+asyncio.run(main())
