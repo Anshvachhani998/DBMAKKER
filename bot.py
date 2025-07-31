@@ -7,7 +7,7 @@ from asyncio import Queue
 import random
 import uuid
 import re
-from typing import Union, Optional, AsyncGenerator
+
 import pytz
 from datetime import date, datetime
 from aiohttp import web
@@ -17,8 +17,6 @@ from pyrogram.raw.all import layer
 from plugins import web_server
 from info import SESSION, API_ID, API_HASH, BOT_TOKEN, LOG_CHANNEL, PORT, USER_SESSION, ADMINS
 
-from typing import AsyncGenerator, Union
-from pyrogram.types import Message
 
 # Logging setup
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +26,11 @@ logging.getLogger("pyrogram").setLevel(logging.ERROR)
 pyroutils.MIN_CHAT_ID = -999999999999
 pyroutils.MIN_CHANNEL_ID = -100999999999999
 
+# Message Queue Setup
+queue = deque()
+processing = False
+message_map = {}
+expected_tracks = {}
 
 
 # ------------------ Bot Class ------------------ #
@@ -38,18 +41,16 @@ class Bot(Client):
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
-            workers=1000,
+            workers=200,
             plugins={"root": "plugins"},
-            sleep_threshold=10, 
-            max_concurrent_transmissions=6
+            sleep_threshold=10,
         )
+        self.insta = None
 
     async def start(self):
         await super().start()
         me = await self.get_me()
         logging.info(f"🤖 {me.first_name} (@{me.username}) running on Pyrogram v{__version__} (Layer {layer})")
-
-       
         tz = pytz.timezone('Asia/Kolkata')
         today = date.today()
         now = datetime.now(tz)
@@ -59,45 +60,45 @@ class Bot(Client):
         await app.setup()
         await web.TCPSite(app, "0.0.0.0", PORT).start()
         logging.info(f"🌐 Web Server Running on PORT {PORT}")
-        
-
-    async def iter_messages(
-        self,
-        chat_id: Union[int, str],
-        limit: int = 100,
-        offset_id: int = 0
-    ) -> AsyncGenerator[Message, None]:
-        total = 0
-        current_id = offset_id if offset_id > 0 else (await self.get_history(chat_id, limit=1))[0].id
-
-        while total < limit:
-            batch_limit = min(100, limit - total)
-
-            # Generate list of message IDs decreasing from current_id backwards
-            message_ids = list(range(current_id, current_id - batch_limit, -1))
-            if not message_ids:
-                break
-
-            messages = await self.get_messages(chat_id, message_ids)
-
-            if not messages:
-                break
-
-            for message in messages:
-                yield message
-                total += 1
-                current_id = message.id - 1
-                if total >= limit:
-                    break
-
-            if len(messages) < batch_limit:
-                break
-                
 
     async def stop(self, *args):
         await super().stop()
         logging.info("🛑 Bot Stopped.")
 
-app = Bot()
-app.run()
 
+# ------------------ Userbot Class ------------------ #
+class Userbot(Client):
+    def __init__(self):
+        super().__init__(
+            name="userbot",
+            api_id=API_ID,
+            api_hash=API_HASH,
+            session_string=USER_SESSION,
+            plugins={"root": "plugins"},
+            workers=50,
+        )
+
+
+app = Bot()
+userbot = Userbot()
+
+
+
+# ------------------ Startup Main ------------------ #
+async def main():
+    await app.start()
+    logging.info("✅ Bot client started.")
+
+    await userbot.start()
+    logging.info(f"👤 Userbot: {(await userbot.get_me()).first_name}")
+
+    for file in os.listdir("./plugins"):
+        if file.endswith(".py"):
+            importlib.import_module(f"plugins.{file[:-3]}")
+
+    await asyncio.Event().wait()
+
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main()) 
