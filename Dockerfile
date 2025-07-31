@@ -2,12 +2,10 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install system dependencies for Playwright + your existing tools
+# Install only required system dependencies (without Playwright stuff)
 RUN apt update && apt install -y \
     ffmpeg aria2 git curl wget gnupg ca-certificates \
-    fonts-liberation libatk-bridge2.0-0 libatk1.0-0 libcups2 libdrm2 \
-    libgbm1 libgtk-3-0 libnspr4 libnss3 libx11-xcb1 libxcomposite1 \
-    libxdamage1 libxrandr2 libxss1 libxtst6 xdg-utils libasound2 \
+    fonts-liberation libasound2 \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
@@ -16,10 +14,9 @@ COPY . .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install spotipy playwright yt-dlp spotdl
-
-# Install Playwright browsers
-RUN python -m playwright install
+RUN pip install spotipy yt-dlp spotdl telethon
 RUN pip install git+https://github.com/AliAkhtari78/SpotifyScraper.git
+
+# Note: Removed Playwright install commands here
 
 CMD ["python", "bot.py"]
