@@ -116,13 +116,10 @@ async def auto_resend_with_thumb(client, message):
 import time 
 
 
-@userbot.on_message(filters.command("ping", prefixes=["!", "/"]) & filters.me)
+@userbot.on_message(filters.private & filters.text & filters.incoming)
 async def ping_handler(client, message):
-    start = time.time()
-    m = await message.reply("🏓 Pinging...")
-    end = time.time()
-    ping_ms = round((end - start) * 1000)
-    await m.edit(f"✅ **Userbot is Alive!**\n⚡️ Ping: `{ping_ms}ms`")
+    if message.text == "!ping":
+        await message.reply("🏓 Userbot is running!")
 
 
 # ------------------ Startup Main ------------------ #
