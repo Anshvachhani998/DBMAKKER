@@ -69,7 +69,7 @@ async def handle_video(event):
             await event.reply(f"❌ Error: {str(e)}")
             logger.error(f"Error sending video for user {user_id}: {str(e)}")
 
-async def main():
+async def start_telethon_client():
     await client.start()
     logger.info("🚀 Telethon client started successfully!")
     await client.run_until_disconnected()
