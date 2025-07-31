@@ -92,31 +92,24 @@ async def download_thumb(url: str, path: str = "thumb.jpg") -> str:
     return None
 
 # Reply to video with /send to resend with thumbnail
-@userbot.on_message(filters.command("send") & filters.me)
-async def resend_with_thumb(client, message):
-    if not message.reply_to_message or not message.reply_to_message.video:
-        await message.reply("❌ Reply to a video message with /send.")
-        return
-
-    # 🖼️ Your manual Telegraph thumbnail URL here
+@userbot.on_message(filters.video & filters.me)
+async def auto_resend_with_thumb(client: Client, message: Message):
     telegraph_thumb_url = "https://telegra.ph/file/604a3f83a6ebeaa9effeb.jpg"
-
-    # Download thumbnail
     thumb_path = await download_thumb(telegraph_thumb_url)
 
     if not thumb_path:
-        await message.reply("⚠️ Failed to download thumbnail.")
+        await message.reply("⚠️ Thumbnail download failed.")
         return
 
     await client.send_video(
         chat_id=message.chat.id,
-        video=message.reply_to_message.video.file_id,
+        video=message.video.file_id,
         thumb=thumb_path,
-        caption="🎬 Here's your video with the new thumbnail!",
+        caption="📽️ Resent with custom thumbnail!",
         supports_streaming=True
     )
 
-    # Cleanup
+    # Optional cleanup
     if os.path.exists(thumb_path):
         os.remove(thumb_path)
 
