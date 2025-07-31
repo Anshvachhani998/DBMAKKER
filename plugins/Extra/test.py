@@ -1,5 +1,5 @@
 import logging
-from telethon import TelegramClient, events
+from telethon import TelegramClient, events, errors
 from telethon.sessions import StringSession
 from telethon.tl.types import InputPhoto
 from io import BytesIO
@@ -10,7 +10,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
-
 logger = logging.getLogger(__name__)
 
 client = TelegramClient(StringSession(USER_SESSION), API_ID, API_HASH)
@@ -44,7 +43,7 @@ async def handle_video(event):
 
         thumb = thumb_store[user_id]
         video_bytes = await client.download_media(event.video, file=BytesIO())
-        video_bytes.write(b'\0')
+        video_bytes.write(b'\0')  # tweak file to force Telegram update
         video_bytes.seek(0)
 
         input_photo = InputPhoto(
@@ -63,11 +62,15 @@ async def handle_video(event):
                 allow_cache=False
             )
             logger.info(f"Video sent with custom thumbnail for user {user_id}")
+        except errors.ChatAdminRequiredError:
+            await event.reply("❌ I need admin rights in this chat to send videos with custom thumbnails.")
+            logger.error(f"Bot lacks admin rights in chat {event.chat_id}")
         except Exception as e:
             await event.reply(f"❌ Error: {str(e)}")
             logger.error(f"Error sending video for user {user_id}: {str(e)}")
 
-async def start_telethon_client():
+async def main():
     await client.start()
     logger.info("🚀 Telethon client started successfully!")
     await client.run_until_disconnected()
+
