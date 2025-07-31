@@ -3,7 +3,7 @@ import os
 SESSION = "spotifydl"
 API_ID = int(os.getenv("API_ID", "8012239"))
 API_HASH = os.getenv("API_HASH", "171e6f1bf66ed8dcc5140fbe827b6b08")
-BOT_TOKEN = os.getenv("BOT_TOKEN", "7277194738:AAE8MNvsbdO7o46NZjO89I_2gdKIYqrDFDQ")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "7277194738:AAH6bnCSQ_VI_4CuhzZO13p1vUjNeWIeono")
 LOG_CHANNEL = int(os.getenv("LOG_CHANNEL", "-1002884716564"))
 DUMP_CHANNEL_ID = int(os.getenv("DUMP_CHANNEL_ID", "-1002884716564"))
 PORT = int(os.getenv("PORT", "8080"))
