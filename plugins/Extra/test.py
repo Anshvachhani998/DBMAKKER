@@ -1,8 +1,7 @@
 from telethon import TelegramClient, events, types
 from info import API_ID, API_HASH, USER_SESSION
 
-client = TelegramClient("session", API_ID, API_HASH).start(session=USER_SESSION)
-
+client = TelegramClient(StringSession(USER_SESSION), API_ID, API_HASH)
 
 thumb_store = {}
 
