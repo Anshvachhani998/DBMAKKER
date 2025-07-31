@@ -1,5 +1,7 @@
 from telethon import TelegramClient, events, types
 from info import API_ID, API_HASH, USER_SESSION
+from telethon.sessions import StringSession
+
 
 client = TelegramClient(StringSession(USER_SESSION), API_ID, API_HASH)
 
