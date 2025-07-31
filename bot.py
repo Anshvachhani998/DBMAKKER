@@ -82,6 +82,45 @@ class Userbot(Client):
 app = Bot()
 userbot = Userbot()
 
+async def download_thumb(url: str, path: str = "thumb.jpg") -> str:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                with open(path, "wb") as f:
+                    f.write(await resp.read())
+                return path
+    return None
+
+# Reply to video with /send to resend with thumbnail
+@userbot.on_message(filters.command("send") & filters.me)
+async def resend_with_thumb(client: Client, message: Message):
+    if not message.reply_to_message or not message.reply_to_message.video:
+        await message.reply("❌ Reply to a video message with /send.")
+        return
+
+    # 🖼️ Your manual Telegraph thumbnail URL here
+    telegraph_thumb_url = "https://telegra.ph/file/604a3f83a6ebeaa9effeb.jpg"
+
+    # Download thumbnail
+    thumb_path = await download_thumb(telegraph_thumb_url)
+
+    if not thumb_path:
+        await message.reply("⚠️ Failed to download thumbnail.")
+        return
+
+    await client.send_video(
+        chat_id=message.chat.id,
+        video=message.reply_to_message.video.file_id,
+        thumb=thumb_path,
+        caption="🎬 Here's your video with the new thumbnail!",
+        supports_streaming=True
+    )
+
+    # Cleanup
+    if os.path.exists(thumb_path):
+        os.remove(thumb_path)
+
+
 
 
 # ------------------ Startup Main ------------------ #
