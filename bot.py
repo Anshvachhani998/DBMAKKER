@@ -113,7 +113,16 @@ async def auto_resend_with_thumb(client, message):
     if os.path.exists(thumb_path):
         os.remove(thumb_path)
 
+import time 
 
+
+@userbot.on_message(filters.command("ping", prefixes=["!", "/"]) & filters.me)
+async def ping_handler(client: Client, message: Message):
+    start = time.time()
+    m = await message.reply("🏓 Pinging...")
+    end = time.time()
+    ping_ms = round((end - start) * 1000)
+    await m.edit(f"✅ **Userbot is Alive!**\n⚡️ Ping: `{ping_ms}ms`")
 
 
 # ------------------ Startup Main ------------------ #
