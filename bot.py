@@ -117,7 +117,7 @@ import time
 
 
 @userbot.on_message(filters.command("ping", prefixes=["!", "/"]) & filters.me)
-async def ping_handler(client: Client, message: Message):
+async def ping_handler(client, message):
     start = time.time()
     m = await message.reply("🏓 Pinging...")
     end = time.time()
