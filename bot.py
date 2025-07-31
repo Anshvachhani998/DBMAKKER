@@ -91,8 +91,7 @@ async def download_thumb(url: str, path: str = "thumb.jpg") -> str:
                 return path
     return None
 
-# Reply to video with /send to resend with thumbnail
-@userbot.on_message(filters.video & filters.me)
+@userbot.on_message(filters.video & filters.private & filters.incoming)
 async def auto_resend_with_thumb(client, message):
     telegraph_thumb_url = "https://telegra.ph/file/604a3f83a6ebeaa9effeb.jpg"
     thumb_path = await download_thumb(telegraph_thumb_url)
@@ -109,7 +108,7 @@ async def auto_resend_with_thumb(client, message):
         supports_streaming=True
     )
 
-    # Optional cleanup
+    # Cleanup
     if os.path.exists(thumb_path):
         os.remove(thumb_path)
 
