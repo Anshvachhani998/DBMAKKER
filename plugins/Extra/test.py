@@ -1,7 +1,7 @@
 from telethon import TelegramClient, events
 from telethon.tl.types import InputPhoto
 from io import BytesIO
-
+import asyncio
 from info import API_ID, API_HASH, USER_SESSION
 from telethon.sessions import StringSession
 
