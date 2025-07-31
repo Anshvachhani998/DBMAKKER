@@ -1,37 +1,39 @@
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from info import API_ID, API_HASH, USER_SESSION
+from telethon import TelegramClient, events, types
+from config import API_ID, API_HASH, USER_SESSION
 
-app = Client(
-    session_name=USER_SESSION,
-    api_id=API_ID,
-    api_hash=API_HASH
-)
+client = TelegramClient("session", API_ID, API_HASH).start(session=USER_SESSION)
+
 
 thumb_store = {}
 
-@app.on_message(filters.photo & filters.private)
-async def save_thumb(client, message: Message):
-    thumb_store[message.from_user.id] = message.photo.file_id
-    await message.reply("✅ Thumbnail saved! Now send a video.")
+@client.on(events.NewMessage(incoming=True))
+async def handler(event):
+    sender = await event.get_sender()
+    user_id = sender.id
 
-@app.on_message(filters.video & filters.private)
-async def send_video_with_thumb(client, message: Message):
-    uid = message.from_user.id
-    thumb_id = thumb_store.get(uid)
+    # Thumbnail Save
+    if event.photo:
+        thumb_store[user_id] = event.media
+        await event.reply("✅ Thumbnail saved! Now send a video.")
 
-    if not thumb_id:
-        return await message.reply("❗Please send a thumbnail image first.")
+    # Video Handling
+    elif event.video:
+        if user_id not in thumb_store:
+            await event.reply("❌ Please send a thumbnail first.")
+            return
 
-    try:
-        await client.send_video(
-            chat_id=message.chat.id,
-            video=message.video.file_id,  # reuse from CDN
-            thumb=thumb_id,
-            caption="🎯 Your video with custom thumbnail (Pyrogram User Session)",
-            force_document=False,
-            supports_streaming=True
-        )
-    except Exception as e:
-        await message.reply(f"❌ Error: {e}")
+        thumb = thumb_store[user_id]
+        video = event.media
+
+        try:
+            await client.send_file(
+                event.chat_id,
+                file=video,                # No download needed
+                thumb=thumb,              # New thumb
+                caption="🎥 Custom thumbnail applied!",
+                force_document=False,
+                allow_cache=False         # <--- This forces Telegram to update thumb
+            )
+        except Exception as e:
+            await event.reply(f"❌ Error: {str(e)}")
 
