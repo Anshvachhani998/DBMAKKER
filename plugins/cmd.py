@@ -10,6 +10,11 @@ from pyrogram import filters
 from bot import channelforward
 from config import Config 
 
+@channelforward.on_message(filters.private & filters.command("start"))
+async def start_handler(client, message: Message):
+    await message.reply_text("👋 Hello! I’m a channel forwarder bot.\nI only forward audio with custom captions.")
+
+
 @channelforward.on_message(filters.channel)
 async def forward(client, message):
     # Forwarding the messages to the channel
