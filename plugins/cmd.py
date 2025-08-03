@@ -12,9 +12,7 @@ logger = logging.getLogger(__name__)
 
 channelforward = Client
 
-CHANNEL = [
-    "-1001698167203:-1002884716564"
-]
+CHANNEL = ["-1001698167203:-1002884716564"]
 
 
 # /start command handler
