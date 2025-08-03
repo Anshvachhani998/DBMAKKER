@@ -25,6 +25,7 @@ async def start_handler(client, message):
 # Audio message from channel handler
 @channelforward.on_message(filters.channel & filters.audio)
 async def forward_audio(client, message):
+    logger.info(f"Audio message received from chat_id={message.chat.id}")
     try:
         for id in CHANNEL:
             from_channel, to_channel = id.split(":")
