@@ -11,7 +11,7 @@ from bot import channelforward
 from config import Config 
 
 @channelforward.on_message(filters.private & filters.command("start"))
-async def start_handler(client, message: Message):
+async def start_handler(client, message):
     await message.reply_text("👋 Hello! I’m a channel forwarder bot.\nI only forward audio with custom captions.")
 
 
