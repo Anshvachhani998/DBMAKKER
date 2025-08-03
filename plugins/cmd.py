@@ -23,7 +23,7 @@ async def start_handler(client, message):
     await message.reply_text("👋 Hello! I’m a channel forwarder bot.\nI only forward audio with custom captions.")
 
 # Audio message from channel handler
-@channelforward.on_message(filters.channel & filters.audio)
+@channelforward.on_message(filters.channel)
 async def forward_audio(client, message):
     logger.info(f"Audio message received from chat_id={message.chat.id}")
     try:
