@@ -1,54 +1,45 @@
+# Don't Remove Credit @VJ_Botz
+# Subscribe YouTube Channel For Amazing Bot @Tech_VJ
+# Ask Doubt on telegram @KingVJ01
+
 import logging
-import logging.config
-import os
-import asyncio
-from pyrogram import Client, __version__
-from pyrogram.raw.all import layer
-from aiohttp import web
-import pytz
-from datetime import date, datetime
-from aiohttp import web
-from plugins import web_server
-from info import SESSION, API_ID, API_HASH, BOT_TOKEN, LOG_CHANNEL, PORT
-from pyrogram import types
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(lineno)d - %(module)s - %(levelname)s - %(message)s'
+)
+logging.getLogger().setLevel(logging.INFO)
+logging.getLogger("pyrogram").setLevel(logging.WARNING)
+
+import uvloop
+uvloop.install()
+from config import Config
+from pyrogram import Client 
 from pyrogram import utils as pyroutils
 
 pyroutils.MIN_CHAT_ID = -999999999999
 pyroutils.MIN_CHANNEL_ID = -100999999999999
 
-logging.getLogger().setLevel(logging.INFO)
-logging.getLogger("pyrogram").setLevel(logging.ERROR)
 
-
-class Bot(Client):
+class channelforward(Client, Config):
     def __init__(self):
         super().__init__(
-            name=SESSION,
-            api_id=API_ID,
-            api_hash=API_HASH,
-            bot_token=BOT_TOKEN,
-            workers=200,
-            plugins={"root": "plugins"},
-            sleep_threshold=10,
+            name="CHANNELFORWARD",
+            bot_token=self.BOT_TOKEN,
+            api_id=self.API_ID,
+            api_hash=self.API_HASH,
+            workers=20,
+            plugins={'root': 'Plugins'}
         )
 
     async def start(self):
         await super().start()
         me = await self.get_me()
-        logging.info(f"🤖 {me.first_name} (@{me.username}) running on Pyrogram v{__version__} (Layer {layer})")
-        tz = pytz.timezone('Asia/Kolkata')
-        today = date.today()
-        now = datetime.now(tz)
-        time = now.strftime("%H:%M:%S %p")
-        await self.send_message(chat_id=LOG_CHANNEL, text=f"✅ Bot Restarted! 📅 Date: {today} 🕒 Time: {time}")
-        app = web.AppRunner(await web_server())
-        await app.setup()
-        await web.TCPSite(app, "0.0.0.0", PORT).start()
-        logging.info(f"🌐 Web Server Running on PORT {PORT}")
+        print(f"New session started for {me.first_name}({me.username})")
 
-    async def stop(self, *args):
+    async def stop(self):
         await super().stop()
-        logging.info("🛑 Bot Stopped.")
+        print("Session stopped. Bye!!")
 
-app = Bot()
-app.run()
+
+if __name__ == "__main__" :
+    channelforward().run()
