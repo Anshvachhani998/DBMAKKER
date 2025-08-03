@@ -17,7 +17,7 @@ async def start_handler(client, message):
 
 @channelforward.on_message(filters.channel)
 async def forward(client, message):
-    # Forwarding the messages to the channel
+   logger.info(f"Received message from chat id: {message.chat.id}")
    try:
       for id in Config.CHANNEL:
          from_channel, to_channel = id.split(":")
