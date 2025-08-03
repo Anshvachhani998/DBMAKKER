@@ -19,12 +19,12 @@ CHANNEL = [
 
 # /start command handler
 @channelforward.on_message(filters.private & filters.command("start"))
-async def start_handler(client, message: Message):
+async def start_handler(client, message):
     await message.reply_text("👋 Hello! I’m a channel forwarder bot.\nI only forward audio with custom captions.")
 
 # Audio message from channel handler
 @channelforward.on_message(filters.channel & filters.audio)
-async def forward_audio(client, message: Message):
+async def forward_audio(client, message):
     try:
         for id in CHANNEL:
             from_channel, to_channel = id.split(":")
