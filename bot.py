@@ -7,14 +7,12 @@ from asyncio import Queue
 import random
 import uuid
 import re
-import aiohttp
 
 import pytz
 from datetime import date, datetime
 from aiohttp import web
 from pyrogram import Client, __version__, filters, types, utils as pyroutils
 from pyrogram.raw.all import layer
-
 from plugins import web_server
 from info import SESSION, API_ID, API_HASH, BOT_TOKEN, LOG_CHANNEL, PORT, USER_SESSION, ADMINS
 
@@ -27,14 +25,9 @@ logging.getLogger("pyrogram").setLevel(logging.ERROR)
 pyroutils.MIN_CHAT_ID = -999999999999
 pyroutils.MIN_CHANNEL_ID = -100999999999999
 
-# Message Queue Setup
-queue = deque()
-processing = False
-message_map = {}
-expected_tracks = {}
+DOWNLOAD_DIR = "/app/downloads"
 
 
-# ------------------ Bot Class ------------------ #
 class Bot(Client):
     def __init__(self):
         super().__init__(
@@ -42,24 +35,30 @@ class Bot(Client):
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token=BOT_TOKEN,
-            workers=200,
+            workers=1000,
             plugins={"root": "plugins"},
             sleep_threshold=10,
+            max_concurrent_transmissions=6
         )
-        self.insta = None
 
     async def start(self):
         await super().start()
+
         me = await self.get_me()
         logging.info(f"🤖 {me.first_name} (@{me.username}) running on Pyrogram v{__version__} (Layer {layer})")
         tz = pytz.timezone('Asia/Kolkata')
         today = date.today()
         now = datetime.now(tz)
-        time = now.strftime("%H:%M:%S %p")
-        await self.send_message(chat_id=LOG_CHANNEL, text=f"✅ Bot Restarted! 📅 Date: {today} 🕒 Time: {time}")
-        app = web.AppRunner(await web_server())
-        await app.setup()
-        await web.TCPSite(app, "0.0.0.0", PORT).start()
+        time_str = now.strftime("%H:%M:%S %p")
+
+        await self.send_message(chat_id=LOG_CHANNEL, text=f"✅ Bot Restarted! 📅 Date: {today} 🕒 Time: {time_str}")
+
+        # Setup and start aiohttp web server
+        app_runner = web.AppRunner(await web_server())
+        await app_runner.setup()
+        site = web.TCPSite(app_runner, "0.0.0.0", PORT)
+        await site.start()
+
         logging.info(f"🌐 Web Server Running on PORT {PORT}")
 
     async def stop(self, *args):
@@ -67,76 +66,5 @@ class Bot(Client):
         logging.info("🛑 Bot Stopped.")
 
 
-# ------------------ Userbot Class ------------------ #
-class Userbot(Client):
-    def __init__(self):
-        super().__init__(
-            name="userbot",
-            api_id=API_ID,
-            api_hash=API_HASH,
-            session_string=USER_SESSION,
-            plugins={"root": "plugins"},
-            workers=50,
-        )
-
-
 app = Bot()
-userbot = Userbot()
-
-async def download_thumb(url: str, path: str = "thumb.jpg") -> str:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            if resp.status == 200:
-                with open(path, "wb") as f:
-                    f.write(await resp.read())
-                return path
-    return None
-
-@userbot.on_message(filters.video & filters.private & filters.incoming)
-async def auto_resend_with_thumb(client, message):
-    telegraph_thumb_url = "https://telegra.ph/file/604a3f83a6ebeaa9effeb.jpg"
-    thumb_path = await download_thumb(telegraph_thumb_url)
-
-    if not thumb_path:
-        await message.reply("⚠️ Thumbnail download failed.")
-        return
-
-    await client.send_video(
-        chat_id=message.chat.id,
-        video=message.video.file_id,
-        thumb=thumb_path,
-        caption="📽️ Resent with custom thumbnail!",
-        supports_streaming=True
-    )
-
-    # Cleanup
-    if os.path.exists(thumb_path):
-        os.remove(thumb_path)
-
-import time 
-
-
-@userbot.on_message(filters.private & filters.text & filters.incoming)
-async def ping_handler(client, message):
-    if message.text == "!ping":
-        await message.reply("🏓 Userbot is running!")
-
-
-# ------------------ Startup Main ------------------ #
-async def main():
-    await app.start()
-    logging.info("✅ Bot client started.")
-
-    await userbot.start()
-    logging.info(f"👤 Userbot: {(await userbot.get_me()).first_name}")
-
-    for file in os.listdir("./plugins"):
-        if file.endswith(".py"):
-            importlib.import_module(f"plugins.{file[:-3]}")
-
-    await asyncio.Event().wait()
-
-
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main()) 
+app.run()
